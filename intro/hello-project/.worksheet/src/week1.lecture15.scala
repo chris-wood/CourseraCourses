@@ -8,14 +8,17 @@ object lecture15 {;import org.scalaide.worksheet.runtime.library.WorksheetSuppor
   1 + 2;System.out.println("""res0: Int(3) = """ + $show(res$0));$skip(78); 
 
   // Try absolute value function
-  def abs(x: Double) = if (x < 0) -x else x;System.out.println("""abs: (x: Double)Double""");$skip(130); 
+  def abs(x: Double) = if (x < 0) -x else x;System.out.println("""abs: (x: Double)Double""");$skip(136); 
 
   def sqrtIter(guess: Double, x: Double): Double =
-    if (isGoodEnough(guess, x)) guess
+    if (betterIsGoodEnough(guess, x)) guess
     else sqrtIter(improve(guess, x), x);System.out.println("""sqrtIter: (guess: Double, x: Double)Double""");$skip(113); 
 
   def isGoodEnough(guess: Double, x: Double): Boolean =
-    abs(guess * guess - x) < 0.001;System.out.println("""isGoodEnough: (guess: Double, x: Double)Boolean""");$skip(81);  // the error handler
+    abs(guess * guess - x) < 0.001;System.out.println("""isGoodEnough: (guess: Double, x: Double)Boolean""");$skip(154);  // the error handler
+                                                  
+	def betterIsGoodEnough(guess : Double, x : Double) : Boolean =
+		abs(guess - (x / guess)) / x < 0.001;System.out.println("""betterIsGoodEnough: (guess: Double, x: Double)Boolean""");$skip(81); 
 
   def improve(guess: Double, x: Double): Double =
     (guess + (x / guess)) / 2;System.out.println("""improve: (guess: Double, x: Double)Double""");$skip(75); 
@@ -26,13 +29,20 @@ object lecture15 {;import org.scalaide.worksheet.runtime.library.WorksheetSuppor
   // Test
   sqrt(2);System.out.println("""res1: Double = """ + $show(res$1));$skip(10); val res$2 = 
   sqrt(4);System.out.println("""res2: Double = """ + $show(res$2));$skip(13); val res$3 = 
-  sqrt(1e-6);System.out.println("""res3: Double = """ + $show(res$3))}
+  sqrt(1e-6);System.out.println("""res3: Double = """ + $show(res$3));$skip(17); val res$4 = 
+  
+  sqrt(0.001);System.out.println("""res4: Double = """ + $show(res$4));$skip(16); val res$5 = 
+  sqrt(0.1e-20);System.out.println("""res5: Double = """ + $show(res$5));$skip(13); val res$6 = 
+  sqrt(1e20);System.out.println("""res6: Double = """ + $show(res$6));$skip(13); val res$7 = 
+  sqrt(1e50);System.out.println("""res7: Double = """ + $show(res$7))}
 }
 
 /*
 - Q: why is isGoodEnough bad for small numbers?
 
-
+taking the mean of guess + x/guess quickly converges towards 0 because x/guess will be small, thus making fewer iterations happen
 
 - Q: why does isGoodEnough not terminate for large numbers?
+
+just the opposite - x/guess is huge, mean is still huge, therefore guess slowly converges towards the right answer
 */

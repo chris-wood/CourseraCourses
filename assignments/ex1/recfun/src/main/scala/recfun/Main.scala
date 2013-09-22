@@ -40,6 +40,12 @@ object Main {
    * Exercise 3
    */
   def countChange(money: Int, coins: List[Int]): Int = {
-    
+    def innerCount(sum: Int, money:Int, coins: List[Int]) : Int = {
+      if (sum > money) 0 // didn't work
+      else if (sum == money) 1 // worked
+      else if (coins.isEmpty) 0 // no coins left to pick from, so it can't possibly work
+      else innerCount(sum + coins.head, money, coins) + innerCount(sum + coins.head, money, coins.tail) + innerCount(sum, money, coins.tail)
+    }
+    innerCount(0, money, coins)
   }
 }

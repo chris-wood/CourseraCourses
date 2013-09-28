@@ -80,8 +80,9 @@ object FunSets {
 
   /**
    * Returns a set transformed by applying `f` to each element of `s`.
+   * f(a1)(a2) === (f(a1))(a2)
    */
-  def map(s: Set, f: Int => Int): Set = (x : Int) => if (contains(s, x)) true else false
+  def map(s: Set, f: Int => Int): Set = (x : Int) => exists(s, y => f(y) == x)
 
   /**
    * Displays the contents of a set

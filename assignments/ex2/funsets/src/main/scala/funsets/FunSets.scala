@@ -43,7 +43,7 @@ object FunSets {
    * the set of all elements of `s` that are not in `t`.
    */
   def diff(s: Set, t: Set): Set = {
-    (x: Int) => contains(s, x) && !contains(s, x)
+    (x: Int) => contains(s, x) && !contains(t, x)
   }
 
   /**
@@ -76,7 +76,7 @@ object FunSets {
    *
    * Note: exists is the logical negation of forall
    */
-  def exists(s: Set, p: Int => Boolean): Boolean = forall(s, (x : Int) => !p(x))
+  def exists(s: Set, p: Int => Boolean): Boolean = !(forall(s, (x : Int) => !p(x)))
 
   /**
    * Returns a set transformed by applying `f` to each element of `s`.

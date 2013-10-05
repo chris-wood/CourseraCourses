@@ -106,6 +106,9 @@ abstract class TweetSet {
    * This method takes a function and applies it to every element in the set.
    */
   def foreach(f: Tweet => Unit): Unit
+  
+  // helper method to avoid checking for empty type 
+  def isEmpty : Boolean
 }
 
 class Empty extends TweetSet {
@@ -129,6 +132,8 @@ class Empty extends TweetSet {
   def remove(tweet: Tweet): TweetSet = this
 
   def foreach(f: Tweet => Unit): Unit = ()
+  
+  def isEmpty : Boolean = true
 }
 
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
@@ -143,17 +148,19 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
     else left.union(right.union(that.incl(elem)))
   }
 
-  def mostRetweeted: Tweet = elem
-    
-    //left.filter((x: Tweet) => x.retweets >= elem.retweets).mostRetweeted
-    
-	// how to ensure we're not calling mostRetweeted on a reference with type Empty?
-    
-//  {
-//    if (elem.retweets >= left.mostRetweeted.retweets && elem.retweets >= right.mostRetweeted.retweets) elem
-//    else if (left.mostRetweeted.retweets >= elem.retweets && left.mostRetweeted.retweets >= right.mostRetweeted.retweets) left.mostRetweeted
-//    else right.mostRetweeted
-//  }
+  def mostRetweeted: Tweet = {
+    if (left.isEmpty && right.isEmpty) elem
+    else if (right.isEmpty)
+    {
+      if (elem.retweets >= left.mostRetweeted.retweets) elem
+      else left.mostRetweeted
+    }
+    else
+    {
+      if (elem.retweets >= right.mostRetweeted.retweets) elem
+      else right.mostRetweeted
+    }
+  }
   
   def descendingByRetweet: TweetList = new Cons(mostRetweeted, this.remove(mostRetweeted).descendingByRetweet)
 
@@ -182,6 +189,8 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
     left.foreach(f)
     right.foreach(f)
   }
+  
+  def isEmpty : Boolean = false
 }
 
 trait TweetList {

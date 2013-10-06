@@ -155,9 +155,15 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
       if (elem.retweets >= left.mostRetweeted.retweets) elem
       else left.mostRetweeted
     }
-    else
+    else if (left.isEmpty)
     {
       if (elem.retweets >= right.mostRetweeted.retweets) elem
+      else right.mostRetweeted
+    }
+    else // both non-empty
+    {
+      if (elem.retweets >= left.mostRetweeted.retweets && elem.retweets >= right.mostRetweeted.retweets) elem
+      else if (left.mostRetweeted.retweets >= elem.retweets && left.mostRetweeted.retweets >= right.mostRetweeted.retweets) left.mostRetweeted 
       else right.mostRetweeted
     }
   }
@@ -219,14 +225,14 @@ object GoogleVsApple {
   val google = List("android", "Android", "galaxy", "Galaxy", "nexus", "Nexus")
   val apple = List("ios", "iOS", "iphone", "iPhone", "ipad", "iPad")
 
-  lazy val googleTweets: TweetSet = ???
-  lazy val appleTweets: TweetSet = ???
+  lazy val googleTweets: TweetSet = TweetReader.allTweets.filter((t : Tweet) => google.foldLeft(false)((acc, str) => acc || t.text.contains(str)))
+  lazy val appleTweets: TweetSet = TweetReader.allTweets.filter((t : Tweet) => apple.foldLeft(false)((acc, str) => acc || t.text.contains(str)))
 
   /**
    * A list of all tweets mentioning a keyword from either apple or google,
    * sorted by the number of retweets.
    */
-  lazy val trending: TweetList = ???
+  lazy val trending: TweetList = googleTweets.union(appleTweets).descendingByRetweet
 }
 
 object Main extends App {

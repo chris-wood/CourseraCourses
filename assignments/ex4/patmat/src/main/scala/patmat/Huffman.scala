@@ -18,9 +18,9 @@ object Huffman {
    * present in the leaves below it. The weight of a `Fork` node is the sum of the weights of these
    * leaves.
    */
-  abstract class CodeTree
-  case class Fork(left: CodeTree, right: CodeTree, chars: List[Char], weight: Int) extends CodeTree
-  case class Leaf(char: Char, weight: Int) extends CodeTree
+  abstract class CodeTree(weight : Int)
+  case class Fork(left: CodeTree, right: CodeTree, chars: List[Char], weight: Int) extends CodeTree(weight)
+  case class Leaf(char: Char, weight: Int) extends CodeTree(weight)
 
 
 
@@ -81,16 +81,16 @@ object Huffman {
     // Insert blah blah into the list of pairs, if it exists
     def times_insert(c : Char, pairs : List[(Char, Int)]) : List[(Char, Int)] = {
       pairs match {
-        List() => List((c, 1)) // return new list!
-        List(p) => if (p._1 == c) List((p._1, p._2 + 1)) else List(p, (c, 1)) // bump up, if necessary
-        p :: ps => if (p._1 == c) List((p._1, p._2 + 1), ps) else times_insert(c, ps) // bump up head spot and return or recurse on tail
+        case Nil => List((c, 1)) // return new list!
+        case p :: Nil => if (p._1 == c) List((p._1, p._2 + 1)) else List(p, (c, 1)) // bump up, if necessary
+        case p :: ps => if (p._1 == c) List((p._1, p._2 + 1)) ::: ps else times_insert(c, ps) // bump up head spot and return or recurse on tail
       }
     }
 
     def chars_walk(chars : List[Char], acc : List[(Char, Int)]) : List[(Char, Int)] = {
       chars match {
-        x :: Nil => times_insert(x, acc)
-        x :: xs => chars_walk(xs, times_insert(x, acc))
+        case x :: Nil => times_insert(x, acc)
+        case x :: xs => chars_walk(xs, times_insert(x, acc))
       }
     }
 
@@ -106,9 +106,12 @@ object Huffman {
    */
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
     freqs match {
-      List() => freqs // empty
-      p :: Nil => List(p._1) // already ordered (single item)
-      p :: ps => makeOrderedLeafList(ps).takeWhile(pp => pp._2 < p._2) :: p :: makeOrderedLeafList(ps).dropWhile(pp => pp._2 >= p._2)
+      case Nil => List() // empty
+      case p :: Nil => List(new Leaf(p._1, 1)) // already ordered (single item)
+      case p :: ps => 
+        makeOrderedLeafList(ps).takeWhile(pp => pp.weight < p._2) ::: 
+    	List(new Leaf(p._1, 1)) ::: 
+    	makeOrderedLeafList(ps).dropWhile(pp => pp.weight >= p._2)
     }
   }
 
@@ -118,9 +121,9 @@ object Huffman {
    * CAW: is this just (trees.length == 1)?
    */
   def singleton(trees: List[CodeTree]): Boolean = trees match {
-    List() => false
-    List(x) => true // trees.length == 1 ?
-    x :: xs => false
+    case Nil => false
+    case x :: Nil => true // trees.length == 1 ?
+    case x :: xs => false
   }
 
   /**
@@ -139,20 +142,22 @@ object Huffman {
 
     def insert_tree(node : CodeTree, trees : List[CodeTree]) : List[CodeTree] = {
       trees match {
-        List() => List(node)
-        List(x) => if (node.weight < x.weight) List[node] ::: trees
-        x :: xs => 
-          if (node.weight < x.weight) List[node] ::: List[x] ::: xs 
-          else List[x] ::: insert_tree(node, xs)
+        case Nil => List(node)
+        case x :: Nil => 
+          if (weight(node) < weight(x)) List(node) ::: trees 
+          else trees ::: List(node)
+        case x :: xs => 
+          if (weight(node) < weight(x)) List(node) ::: List(x) ::: xs 
+          else List(x) ::: insert_tree(node, xs)
       }
     }
 
     // create the combination and then insert back into the right spot in the list
     // ordering of weights must be preserved (ascending order)
     trees match {
-      List() => trees  // 0 elements
-      List(x) => trees // 1 element
-      x1 :: x2 :: xs => insert_tree(makeCodeTree(x1, x2), xs)
+      case Nil => trees  // 0 elements
+      case x :: Nil => trees // 1 element
+      case x1 :: x2 :: xs => insert_tree(makeCodeTree(x1, x2), xs)
     }
   }
 
@@ -173,13 +178,14 @@ object Huffman {
    *    the example invocation. Also define the return type of the `until` function.
    *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
    */
-  def until(isSingleton : (l : List[CodeTree]) => Boolean, combineTrees : (l : List[CodeTree] => List[CodeTree]))(trees: List[CodeTree]): CodeTree = {
+  def until(isSingleton : List[CodeTree] => Boolean, combineTrees : List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): CodeTree = {
     trees match {
-      List() => throw new Exception("blah... should we let this happen?...")
-      List(x) => x // a single code tree, nothing to combine or whatever, so just return the single code tree
-      x :: xs => {
-        if (isSingleton(combineTrees(x, until(isSingleton, combineTrees)xs)) == false) combineTrees(x, until(isSingleton, combineTrees)xs)
-        else trees // we're done, predicate evaluated to false
+      case Nil => throw new Exception("blah... should we let this happen?...")
+      case x :: Nil => x // a single code tree, nothing to combine or whatever, so just return the single code tree
+      case x1 :: x2 :: xs => {
+    	combineTrees(combineTrees(x1 :: x2 :: Nil), xs)
+        //if (isSingleton(combineTrees(x ::: (until(isSingleton, combineTrees)xs) )) == false) combineTrees(x, until(isSingleton, combineTrees)xs)
+        //else combineTrees(trees) // we're done, predicate evaluated to false
       }
     }
   }
@@ -203,21 +209,21 @@ object Huffman {
    */
   def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
 
-    def decode_accum(baseTree : CodeTree, subTree : CodeTree, bits: List[Bit], acc : List[char]) : List[Char] = {
+    def decode_accum(baseTree : CodeTree, subTree : CodeTree, bits: List[Bit], acc : List[Char]) : List[Char] = {
       bits match {
-        List() => acc ::: subTree.chars
-        List(x) => 
+        case Nil => acc
+        case b :: Nil => 
           subTree match {
-            Leaf(char, wt) => decode_accum(baseTree, baseTree, List(), acc)
-            Fork(left, right, chars, wt) => 
-              if (x == 0) decode_accum(baseTree, left, List(), acc)
+            case Leaf(char, wt) => decode_accum(baseTree, baseTree, List(), acc)
+            case Fork(left, right, chars, wt) => 
+              if (b == 0) decode_accum(baseTree, left, List(), acc)
               else decode_accum(baseTree, right, List(), acc)
           }
-        b :: bs => {
+        case b :: bs => {
           subTree match {
-            Leaf(char, wt) => decode_accum(baseTree, baseTree, bs, acc)
-            Fork(left, right, chars, wt) => 
-              if (x == 0) decode_accum(baseTree, left, bs, acc)
+            case Leaf(char, wt) => decode_accum(baseTree, baseTree, bs, acc)
+            case Fork(left, right, chars, wt) => 
+              if (b == 0) decode_accum(baseTree, left, bs, acc)
               else decode_accum(baseTree, right, bs, acc)
           }
         }
@@ -252,18 +258,18 @@ object Huffman {
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-    def encode_character(c : Char, tree : CodeTree, acc : List[Bit]) : List[Bit] = {
-      tree match {
-        Leaf(char, wt) => acc
-        Fork(left, right, chars, wt) => 
-          if (left.contains(c)) encode_character(c, left, acc :: 0)
-          else encode_character(c, right, acc :: 1)
-      }
-    }
-
-    text.fold(List())( (acc : Char, c : Char) => acc ::: encode_character(c) ) // you get the gist...
-  }
+//  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+//    def encode_character(c : Char, tree : CodeTree, acc : List[Bit]) : List[Bit] = {
+//      tree match {
+//        case Leaf(char, wt) => acc
+//        case Fork(left, right, chars, wt) => 
+//          if (left.contains(c)) encode_character(c, left, acc ::: List(0))
+//          else encode_character(c, right, acc ::: List(1))
+//      }
+//    }
+//
+//    text.fold( List() )( (acc : List[Char], c : Char) => acc ::: encode_character(c) ) // you get the gist...
+//  }
 
 
   // Part 4b: Encoding using code table

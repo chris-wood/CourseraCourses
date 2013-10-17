@@ -183,7 +183,11 @@ object Huffman {
       case Nil => throw new Exception("blah... should we let this happen?...")
       case x :: Nil => x // a single code tree, nothing to combine or whatever, so just return the single code tree
       case x1 :: x2 :: xs => {
-    	combineTrees(combineTrees(x1 :: x2 :: Nil), xs)
+
+        if (isSingleton(trees) == false) until(isSingleton, combineTrees)(combineTrees(trees))
+        else trees
+
+    	// combineTrees(combineTrees(x1 :: x2 :: Nil), xs)
         //if (isSingleton(combineTrees(x ::: (until(isSingleton, combineTrees)xs) )) == false) combineTrees(x, until(isSingleton, combineTrees)xs)
         //else combineTrees(trees) // we're done, predicate evaluated to false
       }

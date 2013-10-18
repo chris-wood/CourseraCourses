@@ -78,7 +78,6 @@ object Huffman {
    *   }
    */
   def times(chars: List[Char]): List[(Char, Int)] = {
-    // Insert blah blah into the list of pairs, if it exists
     def times_insert(c : Char, pairs : List[(Char, Int)]) : List[(Char, Int)] = {
       pairs match {
         case Nil => List((c, 1)) // return new list!
@@ -107,11 +106,13 @@ object Huffman {
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
     freqs match {
       case Nil => List() // empty
-      case p :: Nil => List(new Leaf(p._1, 1)) // already ordered (single item)
+      case p :: Nil => 
+        println(p._1 + " " + p._2)
+        List(new Leaf(p._1, p._2)) // already ordered (single item)
       case p :: ps => 
         makeOrderedLeafList(ps).takeWhile(pp => pp.weight < p._2) ::: 
-    	List(new Leaf(p._1, 1)) ::: 
-    	makeOrderedLeafList(ps).dropWhile(pp => pp.weight >= p._2)
+    	List(new Leaf(p._1, p._2)) ::: 
+    	makeOrderedLeafList(ps).dropWhile(pp => pp.char != p._1 && pp.weight < p._2)
     }
   }
 
@@ -183,13 +184,8 @@ object Huffman {
       case Nil => throw new Exception("blah... should we let this happen?...")
       case x :: Nil => x // a single code tree, nothing to combine or whatever, so just return the single code tree
       case x1 :: x2 :: xs => {
-
         if (isSingleton(trees) == false) until(isSingleton, combineTrees)(combineTrees(trees))
-        else trees
-
-    	// combineTrees(combineTrees(x1 :: x2 :: Nil), xs)
-        //if (isSingleton(combineTrees(x ::: (until(isSingleton, combineTrees)xs) )) == false) combineTrees(x, until(isSingleton, combineTrees)xs)
-        //else combineTrees(trees) // we're done, predicate evaluated to false
+        else trees.head
       }
     }
   }
@@ -218,14 +214,14 @@ object Huffman {
         case Nil => acc
         case b :: Nil => 
           subTree match {
-            case Leaf(char, wt) => decode_accum(baseTree, baseTree, List(), acc)
+            case Leaf(char, wt) => decode_accum(baseTree, baseTree, List(b), acc ::: List(char))
             case Fork(left, right, chars, wt) => 
-              if (b == 0) decode_accum(baseTree, left, List(), acc)
-              else decode_accum(baseTree, right, List(), acc)
+              if (b == 0) decode_accum(baseTree, left, List(b), acc)
+              else decode_accum(baseTree, right, List(b), acc)
           }
         case b :: bs => {
           subTree match {
-            case Leaf(char, wt) => decode_accum(baseTree, baseTree, bs, acc)
+            case Leaf(char, wt) => decode_accum(baseTree, baseTree, bs, acc ::: List(char))
             case Fork(left, right, chars, wt) => 
               if (b == 0) decode_accum(baseTree, left, bs, acc)
               else decode_accum(baseTree, right, bs, acc)
@@ -262,18 +258,19 @@ object Huffman {
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-//  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-//    def encode_character(c : Char, tree : CodeTree, acc : List[Bit]) : List[Bit] = {
-//      tree match {
-//        case Leaf(char, wt) => acc
-//        case Fork(left, right, chars, wt) => 
-//          if (left.contains(c)) encode_character(c, left, acc ::: List(0))
-//          else encode_character(c, right, acc ::: List(1))
-//      }
-//    }
-//
-//    text.fold( List() )( (acc : List[Char], c : Char) => acc ::: encode_character(c) ) // you get the gist...
-//  }
+  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+    def encode_character(c : Char, tree : CodeTree, acc : List[Bit]) : List[Bit] = {
+      tree match {
+        case Leaf(char, wt) => if (char == c) acc else Nil
+        case Fork(left, right, chars, wt) => 
+          if (encode_character(c, left, acc ::: List(0)) == Nil) acc ::: List(1) // wasn't in the left branch, so it must be in the right..
+          else acc ::: List(0) // must be in the left branch!
+      }
+    }
+
+    text.foldLeft(List[Bit]()) ((acc : List[Bit], c : Char) => 
+      acc ::: encode_character(c, tree, List[Bit]())) // you get the gist...
+  }
 
 
   // Part 4b: Encoding using code table

@@ -211,17 +211,21 @@ object Huffman {
 
     def decode_accum(baseTree : CodeTree, subTree : CodeTree, bits: List[Bit], acc : List[Char]) : List[Char] = {
       bits match {
-        case Nil => acc
+        case Nil => 
+          subTree match {
+            case Leaf(char, wt) => acc ::: List(char)
+            case Fork(left, right, chars, wt) => acc
+          }
         case b :: Nil => 
           subTree match {
             case Leaf(char, wt) => decode_accum(baseTree, baseTree, List(b), acc ::: List(char))
             case Fork(left, right, chars, wt) => 
-              if (b == 0) decode_accum(baseTree, left, List(b), acc)
-              else decode_accum(baseTree, right, List(b), acc)
+              if (b == 0) decode_accum(baseTree, left, Nil, acc)
+              else decode_accum(baseTree, right, Nil, acc)
           }
         case b :: bs => {
           subTree match {
-            case Leaf(char, wt) => decode_accum(baseTree, baseTree, bs, acc ::: List(char))
+            case Leaf(char, wt) => decode_accum(baseTree, baseTree, b :: bs, acc ::: List(char))
             case Fork(left, right, chars, wt) => 
               if (b == 0) decode_accum(baseTree, left, bs, acc)
               else decode_accum(baseTree, right, bs, acc)

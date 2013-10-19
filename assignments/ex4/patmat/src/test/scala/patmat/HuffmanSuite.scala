@@ -46,4 +46,20 @@ class HuffmanSuite extends FunSuite {
       println("done!")
     }
   }
+  
+  test("convert") {
+    new TestTrees {
+      val test = Fork( Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('p',5), List('e','t','p'),8)
+      println(convert(Fork( Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('p',5), List('e','t','p'),8)))
+      println(encode(test)("p".toList))
+    }
+  }
+  
+  test("quickEncode") {
+    new TestTrees {
+      println(quickEncode(t1)("abbba".toList))
+      assert(decode(t1, quickEncode(t1)("abbba".toList)) === "abbba".toList)
+      println("done!")
+    }
+  }
 }

@@ -18,9 +18,9 @@ object Huffman {
    * present in the leaves below it. The weight of a `Fork` node is the sum of the weights of these
    * leaves.
    */
-  abstract class CodeTree(weight : Int)
-  case class Fork(left: CodeTree, right: CodeTree, chars: List[Char], weight: Int) extends CodeTree(weight)
-  case class Leaf(char: Char, weight: Int) extends CodeTree(weight)
+  abstract class CodeTree
+  case class Fork(left: CodeTree, right: CodeTree, chars: List[Char], weight: Int) extends CodeTree
+  case class Leaf(char: Char, weight: Int) extends CodeTree
 
 
 
@@ -78,18 +78,19 @@ object Huffman {
    *   }
    */
   def times(chars: List[Char]): List[(Char, Int)] = {
+    // Insert blah blah into the list of pairs, if it exists
     def times_insert(c : Char, pairs : List[(Char, Int)]) : List[(Char, Int)] = {
       pairs match {
-        case Nil => List((c, 1)) // return new list!
-        case p :: Nil => if (p._1 == c) List((p._1, p._2 + 1)) else List(p, (c, 1)) // bump up, if necessary
-        case p :: ps => if (p._1 == c) List((p._1, p._2 + 1)) ::: ps else times_insert(c, ps) // bump up head spot and return or recurse on tail
+        List() => List((c, 1)) // return new list!
+        List(p) => if (p._1 == c) List((p._1, p._2 + 1)) else List(p, (c, 1)) // bump up, if necessary
+        p :: ps => if (p._1 == c) List((p._1, p._2 + 1), ps) else times_insert(c, ps) // bump up head spot and return or recurse on tail
       }
     }
 
     def chars_walk(chars : List[Char], acc : List[(Char, Int)]) : List[(Char, Int)] = {
       chars match {
-        case x :: Nil => times_insert(x, acc)
-        case x :: xs => chars_walk(xs, times_insert(x, acc))
+        x :: Nil => times_insert(x, acc)
+        x :: xs => chars_walk(xs, times_insert(x, acc))
       }
     }
 
@@ -105,14 +106,9 @@ object Huffman {
    */
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
     freqs match {
-      case Nil => List() // empty
-      case p :: Nil => 
-        println(p._1 + " " + p._2)
-        List(new Leaf(p._1, p._2)) // already ordered (single item)
-      case p :: ps => 
-        makeOrderedLeafList(ps).takeWhile(pp => pp.weight < p._2) ::: 
-    	List(new Leaf(p._1, p._2)) ::: 
-    	makeOrderedLeafList(ps).dropWhile(pp => pp.char != p._1 && pp.weight < p._2)
+      List() => freqs // empty
+      p :: Nil => List(p._1) // already ordered (single item)
+      p :: ps => makeOrderedLeafList(ps).takeWhile(pp => pp._2 < p._2) :: p :: makeOrderedLeafList(ps).dropWhile(pp => pp._2 >= p._2)
     }
   }
 
@@ -122,9 +118,9 @@ object Huffman {
    * CAW: is this just (trees.length == 1)?
    */
   def singleton(trees: List[CodeTree]): Boolean = trees match {
-    case Nil => false
-    case x :: Nil => true // trees.length == 1 ?
-    case x :: xs => false
+    List() => false
+    List(x) => true // trees.length == 1 ?
+    x :: xs => false
   }
 
   /**
@@ -143,22 +139,20 @@ object Huffman {
 
     def insert_tree(node : CodeTree, trees : List[CodeTree]) : List[CodeTree] = {
       trees match {
-        case Nil => List(node)
-        case x :: Nil => 
-          if (weight(node) < weight(x)) List(node) ::: trees 
-          else trees ::: List(node)
-        case x :: xs => 
-          if (weight(node) < weight(x)) List(node) ::: List(x) ::: xs 
-          else List(x) ::: insert_tree(node, xs)
+        List() => List(node)
+        List(x) => if (node.weight < x.weight) List[node] ::: trees
+        x :: xs => 
+          if (node.weight < x.weight) List[node] ::: List[x] ::: xs 
+          else List[x] ::: insert_tree(node, xs)
       }
     }
 
     // create the combination and then insert back into the right spot in the list
     // ordering of weights must be preserved (ascending order)
     trees match {
-      case Nil => trees  // 0 elements
-      case x :: Nil => trees // 1 element
-      case x1 :: x2 :: xs => insert_tree(makeCodeTree(x1, x2), xs)
+      List() => trees  // 0 elements
+      List(x) => trees // 1 element
+      x1 :: x2 :: xs => insert_tree(makeCodeTree(x1, x2), xs)
     }
   }
 
@@ -179,13 +173,13 @@ object Huffman {
    *    the example invocation. Also define the return type of the `until` function.
    *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
    */
-  def until(isSingleton : List[CodeTree] => Boolean, combineTrees : List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): CodeTree = {
+  def until(isSingleton : (l : List[CodeTree]) => Boolean, combineTrees : (l : List[CodeTree] => List[CodeTree]))(trees: List[CodeTree]): CodeTree = {
     trees match {
-      case Nil => throw new Exception("blah... should we let this happen?...")
-      case x :: Nil => x // a single code tree, nothing to combine or whatever, so just return the single code tree
-      case x1 :: x2 :: xs => {
-        if (isSingleton(trees) == false) until(isSingleton, combineTrees)(combineTrees(trees))
-        else trees.head
+      List() => throw new Exception("blah... should we let this happen?...")
+      List(x) => x // a single code tree, nothing to combine or whatever, so just return the single code tree
+      x :: xs => {
+        if (isSingleton(combineTrees(x, until(isSingleton, combineTrees)xs)) == false) combineTrees(x, until(isSingleton, combineTrees)xs)
+        else trees // we're done, predicate evaluated to false
       }
     }
   }
@@ -209,25 +203,21 @@ object Huffman {
    */
   def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
 
-    def decode_accum(baseTree : CodeTree, subTree : CodeTree, bits: List[Bit], acc : List[Char]) : List[Char] = {
+    def decode_accum(baseTree : CodeTree, subTree : CodeTree, bits: List[Bit], acc : List[char]) : List[Char] = {
       bits match {
-        case Nil => 
+        List() => acc ::: subTree.chars
+        List(x) => 
           subTree match {
-            case Leaf(char, wt) => acc ::: List(char)
-            case Fork(left, right, chars, wt) => acc
+            Leaf(char, wt) => decode_accum(baseTree, baseTree, List(), acc)
+            Fork(left, right, chars, wt) => 
+              if (x == 0) decode_accum(baseTree, left, List(), acc)
+              else decode_accum(baseTree, right, List(), acc)
           }
-        case b :: Nil => 
+        b :: bs => {
           subTree match {
-            case Leaf(char, wt) => decode_accum(baseTree, baseTree, List(b), acc ::: List(char))
-            case Fork(left, right, chars, wt) => 
-              if (b == 0) decode_accum(baseTree, left, Nil, acc)
-              else decode_accum(baseTree, right, Nil, acc)
-          }
-        case b :: bs => {
-          subTree match {
-            case Leaf(char, wt) => decode_accum(baseTree, baseTree, b :: bs, acc ::: List(char))
-            case Fork(left, right, chars, wt) => 
-              if (b == 0) decode_accum(baseTree, left, bs, acc)
+            Leaf(char, wt) => decode_accum(baseTree, baseTree, bs, acc)
+            Fork(left, right, chars, wt) => 
+              if (x == 0) decode_accum(baseTree, left, bs, acc)
               else decode_accum(baseTree, right, bs, acc)
           }
         }
@@ -265,15 +255,14 @@ object Huffman {
   def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
     def encode_character(c : Char, tree : CodeTree, acc : List[Bit]) : List[Bit] = {
       tree match {
-        case Leaf(char, wt) => if (char == c) acc else Nil
-        case Fork(left, right, chars, wt) => 
-          if (encode_character(c, left, acc ::: List(0)) == Nil) acc ::: List(1) // wasn't in the left branch, so it must be in the right..
-          else acc ::: List(0) // must be in the left branch!
+        Leaf(char, wt) => acc
+        Fork(left, right, chars, wt) => 
+          if (left.contains(c)) encode_character(c, left, acc :: 0)
+          else encode_character(c, right, acc :: 1)
       }
     }
 
-    text.foldLeft(List[Bit]()) ((acc : List[Bit], c : Char) => 
-      acc ::: encode_character(c, tree, List[Bit]())) // you get the gist...
+    text.fold(List())( (acc : Char, c : Char) => acc ::: encode_character(c) ) // you get the gist...
   }
 
 
@@ -285,13 +274,7 @@ object Huffman {
    * This function returns the bit sequence that represents the character `char` in
    * the code table `table`.
    */
-  def codeBits(table: CodeTable)(char: Char): List[Bit] = {
-    table match {
-      case Nil => Nil
-      case (c, list) :: Nil => list
-      case (c, list) :: cs => if (char == c) list else codeBits(cs)(char)
-    }
-  }
+  def codeBits(table: CodeTable)(char: Char): List[Bit] = ???
 
   /**
    * Given a code tree, create a code table which contains, for every character in the
@@ -301,23 +284,14 @@ object Huffman {
    * a valid code tree that can be represented as a code table. Using the code tables of the
    * sub-trees, think of how to build the code table for the entire tree.
    */
-  def convert(tree: CodeTree): CodeTable = {
-    def appendBit(table : CodeTable, b : Bit) : CodeTable = {
-	  table.map(p => (p._1, p._2 ::: List(b)))
-  	}
-    
-    tree match {
-    	case Leaf(char, wt) => List((char, Nil))
-    	case Fork(left, right, chars, wt) => mergeCodeTables(appendBit(convert(left), 0), appendBit(convert(right), 1))
-    }
-  }
+  def convert(tree: CodeTree): CodeTable = ???
 
   /**
    * This function takes two code tables and merges them into one. Depending on how you
    * use it in the `convert` method above, this merge method might also do some transformations
    * on the two parameter code tables.
    */
-  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = a ::: b
+  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = ???
 
   /**
    * This function encodes `text` according to the code tree `tree`.
@@ -325,22 +299,5 @@ object Huffman {
    * To speed up the encoding process, it first converts the code tree to a code table
    * and then uses it to perform the actual encoding.
    */
-  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-    def lookup(table : CodeTable, c : Char) : List[Bit] = {
-      table match {
-        case p :: Nil => p._2
-        case p :: ps => if (p._1 == c) p._2 else lookup(ps, c)
-      }
-    }
-    
-    def encodeWithTable(table : CodeTable, text : List[Char], acc : List[Bit]) : List[Bit] = {
-      text match {
-        case Nil => acc
-        case c :: Nil => acc ::: lookup(table, c)
-        case c :: cs => encodeWithTable(table, cs, acc ::: lookup(table, c))
-      }
-    }
-    
-    encodeWithTable(convert(tree), text, List())
-  }
+  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
 }

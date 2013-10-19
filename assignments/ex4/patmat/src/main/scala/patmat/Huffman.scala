@@ -81,18 +81,19 @@ object Huffman {
     def times_insert(c : Char, pairs : List[(Char, Int)]) : List[(Char, Int)] = {
       pairs match {
         case Nil => List((c, 1)) // return new list!
-        case p :: Nil => if (p._1 == c) List((p._1, p._2 + 1)) else List(p, (c, 1)) // bump up, if necessary
-        case p :: ps => if (p._1 == c) List((p._1, p._2 + 1)) ::: ps else times_insert(c, ps) // bump up head spot and return or recurse on tail
+        case p :: Nil => if (p._1 == c) List((p._1, p._2 + 1)) else p :: List((c, 1)) // bump up, if necessary
+        case p :: ps => if (p._1 == c) List((p._1, p._2 + 1)) ::: ps else p :: times_insert(c, ps) // bump up head spot and return or recurse on tail
       }
     }
 
     def chars_walk(chars : List[Char], acc : List[(Char, Int)]) : List[(Char, Int)] = {
       chars match {
+        case Nil => Nil
         case x :: Nil => times_insert(x, acc)
         case x :: xs => chars_walk(xs, times_insert(x, acc))
       }
     }
-
+    
     chars_walk(chars, List()) // accumulator is empty to start
   }
 
@@ -267,8 +268,8 @@ object Huffman {
       tree match {
         case Leaf(char, wt) => if (char == c) acc else Nil
         case Fork(left, right, chars, wt) => 
-          if (encode_character(c, left, acc ::: List(0)) == Nil) acc ::: List(1) // wasn't in the left branch, so it must be in the right..
-          else acc ::: List(0) // must be in the left branch!
+          if (encode_character(c, left, List(0) ::: acc) == Nil) List(1) ::: acc  // wasn't in the left branch, so it must be in the right..
+          else List(0) ::: acc // must be in the left branch!
       }
     }
 
@@ -302,13 +303,13 @@ object Huffman {
    * sub-trees, think of how to build the code table for the entire tree.
    */
   def convert(tree: CodeTree): CodeTable = {
-    def appendBit(table : CodeTable, b : Bit) : CodeTable = {
-	  table.map(p => (p._1, p._2 ::: List(b)))
+    def prependBit(table : CodeTable, b : Bit) : CodeTable = {
+	  table.map(p => (p._1, List(b) ::: p._2))
   	}
     
     tree match {
     	case Leaf(char, wt) => List((char, Nil))
-    	case Fork(left, right, chars, wt) => mergeCodeTables(appendBit(convert(left), 0), appendBit(convert(right), 1))
+    	case Fork(left, right, chars, wt) => mergeCodeTables(prependBit(convert(left), 0), prependBit(convert(right), 1))
     }
   }
 

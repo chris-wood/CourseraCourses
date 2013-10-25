@@ -92,7 +92,29 @@ object Anagrams {
    *  in the example above could have been displayed in some other order.
    */
   def combinations(occurrences: Occurrences): List[Occurrences] = {
-    ???
+    // Remove redundant elements from the big set of combinations
+    def uniquify(bigset : List[Occurrences], acc : List[Occurrences]) : List[Occurrences] = {
+      bigset match {
+        Nil => acc
+        x :: xs => if acc.contains(x) uniquify(xs, acc) else uniquify(xs, acc ::: x)
+      }
+    }
+
+    // Flatten a list of lists into a single list...
+    def flatten(list: List[Occurrences]): List[Occurrences] = list match {
+      case Nil => Nil
+      // case head :: Nil => List(head)
+      case head :: tail => 
+        (head match {
+          case l: List[Occurrences] => flatten(l)
+          case i => List(i)
+        }) ::: flatten(tail)
+    }
+
+    for (pair <- occurrences) yield {
+      if (pair._2 == 1) occurrences ::: combinations(occurrences.filter(pp => pp._1 != pair._1))
+      else occurrences ::: combinations(occurrences.map(pp => if (pp._1 == pair._1) (pp._1, pair._2 - 1) else pp)
+    }
   }
 
   /** Subtracts occurrence list `y` from occurrence list `x`.
@@ -149,6 +171,8 @@ object Anagrams {
    *
    *  Note: There is only one anagram of an empty sentence.
    */
-  def sentenceAnagrams(sentence: Sentence): List[Sentence] = ???
+  def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
+    
+  }
 
 }

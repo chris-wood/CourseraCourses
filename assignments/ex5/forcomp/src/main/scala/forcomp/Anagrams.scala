@@ -34,7 +34,7 @@ object Anagrams {
    *  same character, and are represented as a lowercase character in the occurrence list.
    */
   def wordOccurrences(w: Word): Occurrences = {
-    (for (pair <- w.toList.groupBy((c : Char) => c.toLowerCase).toList) yield (pair._1.toLowerCase, pair._2.length)).sortBy( (c : Char, n : Int) => c)
+    (for (pair <- w.toList.groupBy((c : Char) => c.toLower).toList) yield (pair._1.toLower, pair._2.length)).sortBy( p => p._1 ) // sort by occurrence
   }
 
   /** Converts a sentence into its character occurrence list. */
@@ -60,14 +60,15 @@ object Anagrams {
   lazy val dictionaryByOccurrences: Map[Occurrences, List[Word]] = {
     // dictionary value has the massive list of words
     // returns map from occurrences to lists of words with the same occurrence list
-    val v = dictionary.groupBy((w : Word) => wordOccurrences(w))
-    (for (pair <- v.toList) yield (pair._1, pair._2.toSeq)).toMap
-  }
+    val v = for (pair <- dictionary.groupBy((w : Word) => wordOccurrences(w)).toList) yield (pair._1, pair._2)
+    v.toMap.withDefaultValue(List())
+   }
 
   /** Returns all the anagrams of a given word. */
-  def wordAnagrams(word: Word): List[Word] = {
-    (for (pair <- dictionaryByOccurrences if pair._2.contains(word)) yield pair._2).head // there should only be one head! since dictionaryByOccurrences is correct. :-)
-  }
+  def wordAnagrams(word: Word): List[Word] =	dictionaryByOccurrences(wordOccurrences(word)) 
+//  {
+//    (for (pair <- dictionaryByOccurrences if pair._2.contains(word)) yield pair._2).head // there should only be one head! since dictionaryByOccurrences is correct. :-)
+//  }
 
   /** Returns the list of all subsets of the occurrence list.
    *  This includes the occurrence itself, i.e. `List(('k', 1), ('o', 1))`
@@ -92,28 +93,16 @@ object Anagrams {
    *  in the example above could have been displayed in some other order.
    */
   def combinations(occurrences: Occurrences): List[Occurrences] = {
-    // Remove redundant elements from the big set of combinations
-    def uniquify(bigset : List[Occurrences], acc : List[Occurrences]) : List[Occurrences] = {
-      bigset match {
-        Nil => acc
-        x :: xs => if acc.contains(x) uniquify(xs, acc) else uniquify(xs, acc ::: x)
+    occurrences match {
+      case List() => List(List())
+      case head :: tail => {
+        val tailCombinations = combinations(tail)
+        tailCombinations ++
+          (for {
+            o <- tailCombinations
+            i <- 1 to head._2
+          } yield (head._1, i) :: o)
       }
-    }
-
-    // Flatten a list of lists into a single list...
-    def flatten(list: List[Occurrences]): List[Occurrences] = list match {
-      case Nil => Nil
-      // case head :: Nil => List(head)
-      case head :: tail => 
-        (head match {
-          case l: List[Occurrences] => flatten(l)
-          case i => List(i)
-        }) ::: flatten(tail)
-    }
-
-    for (pair <- occurrences) yield {
-      if (pair._2 == 1) occurrences ::: combinations(occurrences.filter(pp => pp._1 != pair._1))
-      else occurrences ::: combinations(occurrences.map(pp => if (pp._1 == pair._1) (pp._1, pair._2 - 1) else pp)
     }
   }
 
@@ -128,7 +117,8 @@ object Anagrams {
    *  and has no zero-entries.
    */
   def subtract(x: Occurrences, y: Occurrences): Occurrences = {
-    for (ox <- x; oy <- y if ox._1 == oy._1) yield (ox._1, ox._2 - oy._2)
+    val diff = for (ox <- x; oy <- y if ox._1 == oy._1) yield (ox._1, ox._2 - oy._2)
+    (for (oy <- y; ox <- x if oy._1 != ox._1) yield (ox._1, ox._2)) ::: diff.filter(pp => pp._2 != 0)
   }
 
   /** Returns a list of all anagram sentences of the given sentence.
@@ -172,7 +162,18 @@ object Anagrams {
    *  Note: There is only one anagram of an empty sentence.
    */
   def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
-    
+    def sentenceAnagrams(occurrences: Occurrences): List[Sentence] = {
+      if (occurrences.isEmpty)
+        List(List())
+      else {
+        for {
+          occurencesCombination <- combinations(occurrences)
+          word <- dictionaryByOccurrences(occurencesCombination)
+          rest <- sentenceAnagrams(subtract(occurrences, occurencesCombination))
+        } yield word :: rest
+      }
+    }
+    sentenceAnagrams(sentenceOccurrences(sentence))
   }
 
 }

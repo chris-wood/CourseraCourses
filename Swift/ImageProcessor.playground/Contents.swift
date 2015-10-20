@@ -18,6 +18,7 @@ for y in 0...rgbaImage.width {
         var blue = 0.0
         
         // TODO: apply the filter here
+        
     }
 }
 

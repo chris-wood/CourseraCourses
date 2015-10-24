@@ -10,12 +10,14 @@ class ImageFilter {
     var name: String;
     var _array: [[Double]];
     var _bias: Double;
+    var _factor: Double;
     
-    init(filterArray: [[Double]], filterBias: Double, filterName: String) {
+    init(filterArray: [[Double]], filterBias: Double, filterFactor: Double, filterName: String) {
         _array = filterArray;
         width = _array.count;
         height = _array[0].count;
         _bias = filterBias;
+        _factor = filterFactor;
         name = filterName;
     }
     
@@ -25,6 +27,10 @@ class ImageFilter {
     
     func bias() -> Double {
         return _bias;
+    }
+    
+    func factor() -> Double {
+        return _factor;
     }
     
     func getName() -> String {
@@ -74,7 +80,7 @@ class ImageProcessor {
         print(averageBlue)
     }
     
-    func apply_filter(filter: ImageFilter, factor: Double) {
+    func apply_filter(filter: ImageFilter) {
         for row in 0..<_rgbaImage.height {
             for col in 0..<_rgbaImage.width {
                 
@@ -97,9 +103,9 @@ class ImageProcessor {
                     }
                 }
                 
-                pixel.red = UInt8(max(min(255, factor * red + filter.bias()), 0));
-                pixel.green = UInt8(max(min(255, factor * green + filter.bias()), 0));
-                pixel.blue = UInt8(max(min(255, factor * blue + filter.bias()), 0));
+                pixel.red = UInt8(max(min(255, filter.factor() * red + filter.bias()), 0));
+                pixel.green = UInt8(max(min(255, filter.factor() * green + filter.bias()), 0));
+                pixel.blue = UInt8(max(min(255, filter.factor() * blue + filter.bias()), 0));
                 
                 // Store the updated result
                 _rgbaImage.pixels[index] = pixel;
@@ -113,15 +119,15 @@ class ImageProcessor {
     }
 }
 
-let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]], filterBias: 0.0, filterName: "Blur");
-let sharpenFilter = ImageFilter(filterArray: [[-1.0, -1.0, -1.0], [-1.0, -9.0, -1.0], [-1.0, -1.0, -1.0]], filterBias: 1.0, filterName: "Sharpen");
-let brightnessFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "Brighten");
-let contrastFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "Contrast");
-let medianFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "Median");
+let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]], filterBias: 0.0, filterFactor: 1.0, filterName: "Blur");
+let sharpenFilter = ImageFilter(filterArray: [[-1.0, -1.0, -1.0], [-1.0, -9.0, -1.0], [-1.0, -1.0, -1.0]], filterBias: 1.0, filterFactor: 1.0, filterName: "Sharpen");
+let brightnessFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterFactor: 1.0, filterName: "Brighten");
+let contrastFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterFactor: 1.0, filterName: "Contrast");
+let medianFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterFactor: 1.0, filterName: "Median");
 
 
 let processor = ImageProcessor(image: image);
-processor.apply_filter(blurFilter, factor: 1.0);
+processor.apply_filter(blurFilter);
 let newImage = processor.produceImage();
 
 /*

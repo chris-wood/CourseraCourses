@@ -4,6 +4,57 @@ import UIKit
 
 let image = UIImage(named: "sample")!
 
+class ImageFilterCollection {
+    var filters: [ImageFilter];
+    
+    init(theFilters:[ImageFilter]) {
+        filters = theFilters;
+        populate();
+    }
+    
+    private func populate() {
+        let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]],
+            filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+            filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+            filterName: "Blur");
+        filters.append(blurFilter);
+        
+        let sharpenFilter = ImageFilter(filterArray: [[-1.0, -1.0, -1.0], [-1.0, -9.0, -1.0], [-1.0, -1.0, -1.0]],
+            filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+            filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+            filterName: "Sharpen");
+        filters.append(sharpenFilter);
+        
+        let brightnessFilter = ImageFilter(filterArray: [[1.0]],
+            filterBias: { (avg:Int, filtered:Double, actual:UInt8) -> Double in 75.0 },
+            filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+            filterName: "Brighten");
+        filters.append(brightnessFilter);
+        
+        let contrastFilter = ImageFilter(filterArray: [[1.0]],
+            filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 50},
+            filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 2.2},
+            filterName: "Contrast");
+        filters.append(contrastFilter);
+        
+        let medianFilter = ImageFilter(filterArray: [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+            filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+            filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in (1.0 / 9.0)},
+            filterName: "Median");
+        filters.append(medianFilter);
+    }
+    
+    func lookup(name: String) -> ImageFilter? {
+        let target = name.lowercaseString
+        for filter in filters {
+            if filter.name.containsString(target) {
+                return filter;
+            }
+        }
+        return nil;
+    }
+}
+
 class ImageFilter {
     var width: Int;
     var height: Int;
@@ -37,13 +88,17 @@ class ImageProcessor {
     var averageRed:Int;
     var averageGreen:Int;
     var averageBlue:Int;
+    var collection:ImageFilterCollection;
     
-    init(image: UIImage) {
+    init(image: UIImage, filterCollection: ImageFilterCollection) {
         _image = image;
         _rgbaImage = RGBAImage(image: image)!;
         averageRed = 0;
         averageGreen = 0;
         averageBlue = 0;
+        collection = filterCollection;
+        
+        // Preprocess the image
         preprocess();
     }
     
@@ -72,7 +127,15 @@ class ImageProcessor {
         print(averageBlue)
     }
     
-    func apply_filter(filter: ImageFilter) {
+    func apply(name: String) {
+        if let filter = collection.lookup(name) {
+            apply_filter(filter);
+        } else {
+            print("Unable to find a filter with the name " + name);
+        }
+    }
+    
+    private func apply_filter(filter: ImageFilter) {
         for row in 0..<_rgbaImage.height {
             for col in 0..<_rgbaImage.width {
                 
@@ -95,9 +158,19 @@ class ImageProcessor {
                     }
                 }
                 
-                pixel.red = UInt8(max(min(255, filter.factor(averageRed, red, pixel.red) * red + filter.bias(averageRed, red, pixel.red)), 0));
-                pixel.green = UInt8(max(min(255, filter.factor(averageGreen, green, pixel.green) * green + filter.bias(averageGreen, green, pixel.green)), 0));
-                pixel.blue = UInt8(max(min(255, filter.factor(averageBlue, blue, pixel.blue) * blue + filter.bias(averageBlue, blue, pixel.blue)), 0));
+                // Compute the new pixel RGB values based on a function of the filter factor
+                // and bias
+                pixel.red = UInt8(max(min(255,
+                    filter.factor(averageRed, red, pixel.red) * red +
+                        filter.bias(averageRed, red, pixel.red)), 0));
+                
+                pixel.green = UInt8(max(min(255,
+                    filter.factor(averageGreen, green, pixel.green) * green +
+                        filter.bias(averageGreen, green, pixel.green)), 0));
+                
+                pixel.blue = UInt8(max(min(255,
+                    filter.factor(averageBlue, blue, pixel.blue) * blue +
+                        filter.bias(averageBlue, blue, pixel.blue)), 0));
                 
                 // Store the updated result
                 _rgbaImage.pixels[index] = pixel;
@@ -111,34 +184,10 @@ class ImageProcessor {
     }
 }
 
-let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]],
-    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
-    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
-    filterName: "Blur");
+let processor = ImageProcessor(image: image, ImageFilterCollection(theFilters: []));
 
-let sharpenFilter = ImageFilter(filterArray: [[-1.0, -1.0, -1.0], [-1.0, -9.0, -1.0], [-1.0, -1.0, -1.0]],
-    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
-    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
-    filterName: "Sharpen");
+processor.apply("Brightness");
 
-let brightnessFilter = ImageFilter(filterArray: [[1.0]],
-    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
-    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
-    filterName: "Brighten");
-
-let contrastFilter = ImageFilter(filterArray: [[1.0]],
-    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
-    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
-    filterName: "Contrast");
-
-let medianFilter = ImageFilter(filterArray: [[1.0]],
-    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
-    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
-    filterName: "Median");
-
-
-let processor = ImageProcessor(image: image);
-processor.apply_filter(blurFilter);
 let newImage = processor.produceImage();
 
-/*
+

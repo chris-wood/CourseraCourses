@@ -137,6 +137,12 @@ class ImageProcessor {
         }
     }
     
+    func apply_filters(filters: [ImageFilter]) {
+        for filter in filters {
+            apply_filter(filter);
+        }
+    }
+    
     func apply_filter(filter: ImageFilter) {
         for row in 0..<_rgbaImage.height {
             for col in 0..<_rgbaImage.width {

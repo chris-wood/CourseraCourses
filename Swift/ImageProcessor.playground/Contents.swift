@@ -47,7 +47,7 @@ class ImageFilterCollection {
     func lookup(name: String) -> ImageFilter? {
         let target = name.lowercaseString
         for filter in filters {
-            if filter.name.containsString(target) {
+            if filter.name.lowercaseString.containsString(target) {
                 return filter;
             }
         }
@@ -127,11 +127,13 @@ class ImageProcessor {
         print(averageBlue)
     }
     
-    func apply(name: String) {
-        if let filter = collection.lookup(name) {
-            apply_filter(filter);
-        } else {
-            print("Unable to find a filter with the name " + name);
+    func apply(names: String...) {
+        for name in names {
+            if let filter = collection.lookup(name) {
+                apply_filter(filter);
+            } else {
+                print("Unable to find a filter with the name " + name);
+            }
         }
     }
     
@@ -184,9 +186,11 @@ class ImageProcessor {
     }
 }
 
-let processor = ImageProcessor(image: image, ImageFilterCollection(theFilters: []));
+let processor = ImageProcessor(image: image, filterCollection: ImageFilterCollection(theFilters: []));
 
-processor.apply("Brightness");
+processor.apply("Brighten", "Blur");
+
+let imageCopy = UIImage(named: "sample")!;
 
 let newImage = processor.produceImage();
 

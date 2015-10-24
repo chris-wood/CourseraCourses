@@ -9,28 +9,20 @@ class ImageFilter {
     var height: Int;
     var name: String;
     var _array: [[Double]];
-    var _bias: Double;
-    var _factor: Double;
+    var bias: (Int, Double, UInt8) -> Double;
+    var factor: (Int, Double, UInt8) -> Double;
     
-    init(filterArray: [[Double]], filterBias: Double, filterFactor: Double, filterName: String) {
+    init(filterArray: [[Double]], filterBias: (Int, Double, UInt8) -> Double, filterFactor: (Int, Double, UInt8) -> Double, filterName: String) {
         _array = filterArray;
         width = _array.count;
         height = _array[0].count;
-        _bias = filterBias;
-        _factor = filterFactor;
+        bias = filterBias;
+        factor = filterFactor;
         name = filterName;
     }
     
     func weight(x: Int, y: Int) -> Double {
         return _array[x][y];
-    }
-    
-    func bias() -> Double {
-        return _bias;
-    }
-    
-    func factor() -> Double {
-        return _factor;
     }
     
     func getName() -> String {
@@ -103,9 +95,9 @@ class ImageProcessor {
                     }
                 }
                 
-                pixel.red = UInt8(max(min(255, filter.factor() * red + filter.bias()), 0));
-                pixel.green = UInt8(max(min(255, filter.factor() * green + filter.bias()), 0));
-                pixel.blue = UInt8(max(min(255, filter.factor() * blue + filter.bias()), 0));
+                pixel.red = UInt8(max(min(255, filter.factor(averageRed, red, pixel.red) * red + filter.bias(averageRed, red, pixel.red)), 0));
+                pixel.green = UInt8(max(min(255, filter.factor(averageGreen, green, pixel.green) * green + filter.bias(averageGreen, green, pixel.green)), 0));
+                pixel.blue = UInt8(max(min(255, filter.factor(averageBlue, blue, pixel.blue) * blue + filter.bias(averageBlue, blue, pixel.blue)), 0));
                 
                 // Store the updated result
                 _rgbaImage.pixels[index] = pixel;
@@ -119,11 +111,30 @@ class ImageProcessor {
     }
 }
 
-let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]], filterBias: 0.0, filterFactor: 1.0, filterName: "Blur");
-let sharpenFilter = ImageFilter(filterArray: [[-1.0, -1.0, -1.0], [-1.0, -9.0, -1.0], [-1.0, -1.0, -1.0]], filterBias: 1.0, filterFactor: 1.0, filterName: "Sharpen");
-let brightnessFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterFactor: 1.0, filterName: "Brighten");
-let contrastFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterFactor: 1.0, filterName: "Contrast");
-let medianFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterFactor: 1.0, filterName: "Median");
+let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]],
+    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+    filterName: "Blur");
+
+let sharpenFilter = ImageFilter(filterArray: [[-1.0, -1.0, -1.0], [-1.0, -9.0, -1.0], [-1.0, -1.0, -1.0]],
+    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+    filterName: "Sharpen");
+
+let brightnessFilter = ImageFilter(filterArray: [[1.0]],
+    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+    filterName: "Brighten");
+
+let contrastFilter = ImageFilter(filterArray: [[1.0]],
+    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+    filterName: "Contrast");
+
+let medianFilter = ImageFilter(filterArray: [[1.0]],
+    filterBias: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 0.0},
+    filterFactor: {(avg:Int, filtered:Double, actual:UInt8) -> Double in 1.0},
+    filterName: "Median");
 
 
 let processor = ImageProcessor(image: image);

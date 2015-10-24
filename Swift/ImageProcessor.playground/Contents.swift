@@ -96,8 +96,7 @@ class ImageProcessor {
                         blue += Double(_rgbaImage.pixels[index].blue) * filter.weight(x, y: y);
                     }
                 }
-                
-                print(red);
+            
                 
                 pixel.red = UInt8(max(min(255, factor * red + filter.bias()), 0));
                 pixel.green = UInt8(max(min(255, factor * green + filter.bias()), 0));
@@ -108,23 +107,6 @@ class ImageProcessor {
             }
         }
 
-        
-//        for y in 0..<_rgbaImage.height {
-//            for x in 0..<_rgbaImage.width {
-//                let index = (y * _rgbaImage.width) + x
-//                var pixel = _rgbaImage.pixels[index];
-//                
-//                let redDelta = Int(pixel.red) - averageRed;
-//                let greenDelta = Int(pixel.green) - averageGreen;
-//                let blueDelta = Int(pixel.blue) - averageBlue;
-//                
-//                pixel.red = UInt8(max(min(255, averageRed + (2 * redDelta)), 0));
-//                pixel.green = UInt8(max(min(255, averageGreen + (2 * greenDelta)), 0));
-//                pixel.blue = UInt8(max(min(255, averageBlue + (2 * blueDelta)), 0));
-//
-//                _rgbaImage.pixels[index] = pixel;
-//            }
-//        }
     }
     
     func produceImage() -> UIImage {
@@ -133,7 +115,10 @@ class ImageProcessor {
 }
 
 let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]], filterBias: 0.0, filterName: "random");
+let sharpenFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "sa")
 
 let processor = ImageProcessor(image: image);
-processor.apply_filter(filter1, factor: 1.0);
+processor.apply_filter(blurFilter, factor: 1.0);
 let newImage = processor.produceImage();
+
+/*

@@ -4,31 +4,136 @@ import UIKit
 
 let image = UIImage(named: "sample")!
 
-
-// Process the image!
-let rgbaImage = RGBAImage(image: image)!;
-
-// Apply some basic filter
-for y in 0...rgbaImage.width {
-    for x in 0...rgbaImage.height {
-        let index = (x * rgbaImage.width) + y;
-        
-        var red = 0.0
-        var green = 0.0
-        var blue = 0.0
-        
-        // TODO: apply the filter here
-        
+class ImageFilter {
+    var width: Int;
+    var height: Int;
+    var name: String;
+    var _array: [[Double]];
+    var _bias: Double;
+    
+    init(filterArray: [[Double]], filterBias: Double, filterName: String) {
+        _array = filterArray;
+        width = _array.count;
+        height = _array[0].count;
+        _bias = filterBias;
+        name = filterName;
+    }
+    
+    func weight(x: Int, y: Int) -> Double {
+        return _array[x][y];
+    }
+    
+    func bias() -> Double {
+        return _bias;
+    }
+    
+    func getName() -> String {
+        return name;
     }
 }
 
 class ImageProcessor {
     
-    var _image:UIImage;
+    private var _image:UIImage;
+    private var _rgbaImage:RGBAImage;
+    var averageRed:Int;
+    var averageGreen:Int;
+    var averageBlue:Int;
     
-    init (image: UIImage) {
+    init(image: UIImage) {
         _image = image;
+        _rgbaImage = RGBAImage(image: image)!;
+        averageRed = 0;
+        averageGreen = 0;
+        averageBlue = 0;
+        preprocess();
     }
     
+    private func preprocess() {
+        let pixelCount = Double(_rgbaImage.width * _rgbaImage.height);
+        
+        var red = 0.0
+        var green = 0.0
+        var blue = 0.0
+        
+        for yy in 0..<_rgbaImage.height {
+            for xx in 0..<_rgbaImage.width {
+                let inner = (yy * _rgbaImage.width) + xx;
+                red += Double(_rgbaImage.pixels[inner].red);
+                green += Double(_rgbaImage.pixels[inner].green);
+                blue += Double(_rgbaImage.pixels[inner].blue);
+            }
+        }
+        
+        averageRed = Int(red / pixelCount);
+        averageGreen = Int(green / pixelCount);
+        averageBlue = Int(blue / pixelCount);
+        
+        print(averageRed)
+        print(averageGreen)
+        print(averageBlue)
+    }
     
+    func apply_filter(filter: ImageFilter, factor: Double) {
+        for row in 0..<_rgbaImage.height {
+            for col in 0..<_rgbaImage.width {
+                
+                var red = 0.0;
+                var green = 0.0;
+                var blue = 0.0;
+                
+                let index = (row * _rgbaImage.width) + col
+                var pixel = _rgbaImage.pixels[index];
+
+                for x in 0..<filter.width {
+                    for y in 0..<filter.height {
+                        let imageX = (col - (filter.width / 2) + x + _rgbaImage.width) % _rgbaImage.width;
+                        let imageY = (row - (filter.height / 2) + y + _rgbaImage.height) % _rgbaImage.height;
+                        let index = (imageY * _rgbaImage.width) + imageX;
+                        
+                        red += Double(_rgbaImage.pixels[index].red) * filter.weight(x, y: y);
+                        green += Double(_rgbaImage.pixels[index].green) * filter.weight(x, y: y);
+                        blue += Double(_rgbaImage.pixels[index].blue) * filter.weight(x, y: y);
+                    }
+                }
+                
+                print(red);
+                
+                pixel.red = UInt8(max(min(255, factor * red + filter.bias()), 0));
+                pixel.green = UInt8(max(min(255, factor * green + filter.bias()), 0));
+                pixel.blue = UInt8(max(min(255, factor * blue + filter.bias()), 0));
+                
+                // Store the updated result
+                _rgbaImage.pixels[index] = pixel;
+            }
+        }
+
+        
+//        for y in 0..<_rgbaImage.height {
+//            for x in 0..<_rgbaImage.width {
+//                let index = (y * _rgbaImage.width) + x
+//                var pixel = _rgbaImage.pixels[index];
+//                
+//                let redDelta = Int(pixel.red) - averageRed;
+//                let greenDelta = Int(pixel.green) - averageGreen;
+//                let blueDelta = Int(pixel.blue) - averageBlue;
+//                
+//                pixel.red = UInt8(max(min(255, averageRed + (2 * redDelta)), 0));
+//                pixel.green = UInt8(max(min(255, averageGreen + (2 * greenDelta)), 0));
+//                pixel.blue = UInt8(max(min(255, averageBlue + (2 * blueDelta)), 0));
+//
+//                _rgbaImage.pixels[index] = pixel;
+//            }
+//        }
+    }
+    
+    func produceImage() -> UIImage {
+        return _rgbaImage.toUIImage()!
+    }
 }
+
+let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]], filterBias: 0.0, filterName: "random");
+
+let processor = ImageProcessor(image: image);
+processor.apply_filter(filter1, factor: 1.0);
+let newImage = processor.produceImage();

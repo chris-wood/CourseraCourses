@@ -96,7 +96,6 @@ class ImageProcessor {
                         blue += Double(_rgbaImage.pixels[index].blue) * filter.weight(x, y: y);
                     }
                 }
-            
                 
                 pixel.red = UInt8(max(min(255, factor * red + filter.bias()), 0));
                 pixel.green = UInt8(max(min(255, factor * green + filter.bias()), 0));
@@ -114,8 +113,12 @@ class ImageProcessor {
     }
 }
 
-let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]], filterBias: 0.0, filterName: "random");
-let sharpenFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "sa")
+let blurFilter = ImageFilter(filterArray: [[0.0, 0.2, 0.0], [0.2, 0.2, 0.2], [0.0, 0.2, 0.0]], filterBias: 0.0, filterName: "Blur");
+let sharpenFilter = ImageFilter(filterArray: [[-1.0, -1.0, -1.0], [-1.0, -9.0, -1.0], [-1.0, -1.0, -1.0]], filterBias: 1.0, filterName: "Sharpen");
+let brightnessFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "Brighten");
+let contrastFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "Contrast");
+let medianFilter = ImageFilter(filterArray: <#T##[[Double]]#>, filterBias: 1.0, filterName: "Median");
+
 
 let processor = ImageProcessor(image: image);
 processor.apply_filter(blurFilter, factor: 1.0);

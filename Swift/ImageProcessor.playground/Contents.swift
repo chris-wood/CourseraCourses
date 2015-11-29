@@ -201,3 +201,4 @@ let imageCopy = UIImage(named: "sample")!;
 let newImage = processor.produceImage();
 
 
+{

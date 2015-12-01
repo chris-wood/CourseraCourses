@@ -15,7 +15,10 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     var filteredImage: UIImage?
     var originalImage: UIImage?
 
+    @IBOutlet weak var editSlider: UISlider!
+    
     var filtered: Bool = false
+    
     @IBOutlet weak var originalOverlayLabel: UILabel!
     
     @IBOutlet weak var compareButton: UIButton!
@@ -41,6 +44,10 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         secondaryView.addConstraints(imageView.constraints)
         secondaryView.layoutIfNeeded()
         secondaryView.addSubview(originalOverlayLabel)
+        
+        // setup the edit slider (0-2)
+        editSlider.minimumValue = 0.0;
+        editSlider.maximumValue = 2.0;
         
         filtered = false
         compareButton.enabled = filtered
@@ -103,6 +110,13 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         }
     }
     
+    @IBAction func onEditSlider(sender: UISlider) {
+        processor!.intensity = Double(sender.value)
+        processor!.applyLast();
+        filteredImage = processor!.produceImage();
+        imageView.image = filteredImage
+    }
+    
     // MARK: New Photo
     @IBAction func onNewPhoto(sender: AnyObject) {
         let actionSheet = UIAlertController(title: "New Photo", message: nil, preferredStyle: .ActionSheet)
@@ -159,9 +173,11 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     @IBAction func onMedianFilter(sender: UIButton) {
         print("onMedianFilter")
-        processor!.apply("Median");
+        
+        processor!.onlyApply("Median");
         filteredImage = processor!.produceImage();
         imageView.image = filteredImage
+        
         filtered = true
         compareButton.enabled = filtered
         originalOverlayLabel.hidden = true
@@ -169,9 +185,11 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     @IBAction func onConstrastFilter(sender: UIButton) {
         print("onConstrastFilter")
-        processor!.apply("Constrast");
+        
+        processor!.onlyApply("Constrast");
         filteredImage = processor!.produceImage();
         imageView.image = filteredImage
+        
         filtered = true
         compareButton.enabled = filtered
         originalOverlayLabel.hidden = true
@@ -179,9 +197,11 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     @IBAction func onBrightenFilter(sender: UIButton) {
         print("onBrightenFilter")
-        processor!.apply("Brighten");
+        
+        processor!.onlyApply("Brighten");
         filteredImage = processor!.produceImage();
         imageView.image = filteredImage
+        
         filtered = true
         compareButton.enabled = filtered
         originalOverlayLabel.hidden = true
@@ -189,9 +209,11 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
 
     @IBAction func onSharpenFilter(sender: UIButton) {
         print("onSharpenFilter")
-        processor!.apply("Sharpen");
+        
+        processor!.onlyApply("Sharpen");
         filteredImage = processor!.produceImage();
         imageView.image = filteredImage
+        
         filtered = true
         compareButton.enabled = filtered
         originalOverlayLabel.hidden = true
@@ -199,9 +221,11 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     @IBAction func onBlurFilter(sender: UIButton) {
         print("onBlurFilter")
-        processor!.apply("Blur");
+        
+        processor!.onlyApply("Blur");
         filteredImage = processor!.produceImage();
         imageView.image = filteredImage
+        
         filtered = true
         compareButton.enabled = filtered
         originalOverlayLabel.hidden = true

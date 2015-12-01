@@ -65,6 +65,7 @@ class ImageFilter {
     var name: String;
     var _array: [[Double]];
     var bias: (Int, Double, UInt8) -> Double;
+    var intensity: Double;
     var factor: (Int, Double, UInt8) -> Double;
     
     init(filterArray: [[Double]], filterBias: (Int, Double, UInt8) -> Double, filterFactor: (Int, Double, UInt8) -> Double, filterName: String) {
@@ -74,6 +75,7 @@ class ImageFilter {
         bias = filterBias;
         factor = filterFactor;
         name = filterName;
+        intensity = 1.0;
     }
     
     func weight(x: Int, y: Int) -> Double {
@@ -88,19 +90,25 @@ class ImageFilter {
 class ImageProcessor {
     
     private var _image:UIImage;
+    private var _original:UIImage;
     private var _rgbaImage:RGBAImage;
     var averageRed:Int;
     var averageGreen:Int;
     var averageBlue:Int;
+    var intensity: Double;
+    var lastFilter: String;
     var collection:ImageFilterCollection;
     
     init(image: UIImage, filterCollection: ImageFilterCollection) {
         _image = image;
+        _original = image;
         _rgbaImage = RGBAImage(image: image)!;
         averageRed = 0;
         averageGreen = 0;
         averageBlue = 0;
         collection = filterCollection;
+        intensity = 1.0;
+        lastFilter = "";
         
         // Preprocess the image
         preprocess();
@@ -141,6 +149,26 @@ class ImageProcessor {
         }
     }
     
+    func applyLast() {
+        if lastFilter != "" {
+            _rgbaImage = RGBAImage(image: _original)!;
+            preprocess();
+            let filter = collection.lookup(lastFilter)!;
+            apply_filter(filter);
+        }
+    }
+    
+    func onlyApply(name: String) {
+        if let filter = collection.lookup(name) {
+            _rgbaImage = RGBAImage(image: _original)!;
+            preprocess();
+            lastFilter = name;
+            apply_filter(filter);
+        } else {
+            print("Unable to find a filter with the name " + name);
+        }
+    }
+    
     func apply_filters(filters: [ImageFilter]) {
         for filter in filters {
             apply_filter(filter);
@@ -172,17 +200,14 @@ class ImageProcessor {
                 
                 // Compute the new pixel RGB values based on a function of the filter factor
                 // and bias
-                pixel.red = UInt8(max(min(255,
-                    filter.factor(averageRed, red, pixel.red) * red +
-                        filter.bias(averageRed, red, pixel.red)), 0));
+                let redval = (intensity * filter.factor(averageRed, red, pixel.red) * red) + filter.bias(averageRed, red, pixel.red);
+                pixel.red = UInt8(max(min(255, redval), 0));
                 
-                pixel.green = UInt8(max(min(255,
-                    filter.factor(averageGreen, green, pixel.green) * green +
-                        filter.bias(averageGreen, green, pixel.green)), 0));
+                let greenval = (intensity * filter.factor(averageGreen, green, pixel.green) * green) + filter.bias(averageGreen, green, pixel.green);
+                pixel.green = UInt8(max(min(255, greenval), 0));
                 
-                pixel.blue = UInt8(max(min(255,
-                    filter.factor(averageBlue, blue, pixel.blue) * blue +
-                        filter.bias(averageBlue, blue, pixel.blue)), 0));
+                let blueval = (intensity * filter.factor(averageBlue, blue, pixel.blue) * blue) + filter.bias(averageBlue, blue, pixel.blue);
+                pixel.blue = UInt8(max(min(255, blueval), 0));
                 
                 // Store the updated result
                 _rgbaImage.pixels[index] = pixel;
@@ -194,6 +219,7 @@ class ImageProcessor {
     func produceImage() -> UIImage {
         return _rgbaImage.toUIImage()!
     }
+    
 }
 
 //let processor = ImageProcessor(image: image, filterCollection: ImageFilterCollection(theFilters: []));

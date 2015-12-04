@@ -139,6 +139,7 @@
                     <connections>
                         <outlet property="bottomMenu" destination="JNF-wb-wwY" id="jTm-2q-PDu"/>
                         <outlet property="compareButton" destination="tPg-2N-f93" id="C0A-CC-gyE"/>
+                        <outlet property="editButton" destination="WI2-1y-uqd" id="0gs-Ah-4rW"/>
                         <outlet property="editSlider" destination="G4O-AV-hhf" id="fu8-hY-O2I"/>
                         <outlet property="filterButton" destination="C6B-1F-j0K" id="6Kf-1q-zun"/>
                         <outlet property="imageView" destination="aND-Em-4Dd" id="vbi-rB-DhQ"/>

@@ -22,6 +22,8 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     @IBOutlet weak var originalOverlayLabel: UILabel!
     
     @IBOutlet weak var compareButton: UIButton!
+    @IBOutlet var filterButton: UIButton!
+    @IBOutlet weak var editButton: UIButton!
     
     @IBOutlet var imageView: UIImageView!
     
@@ -31,8 +33,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     @IBOutlet var secondaryMenu: UIView!
     @IBOutlet var bottomMenu: UIView!
-    
-    @IBOutlet var filterButton: UIButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -104,6 +104,9 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             hideSliderWidget()
             sender.selected = false
         } else {
+            compareButton.selected = false;
+            filterButton.selected = false;
+            
             hideSecondaryMenu()
             showSliderWidget()
             sender.selected = true
@@ -172,7 +175,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     @IBAction func onMedianFilter(sender: UIButton) {
-        print("onMedianFilter")
+//        print("onMedianFilter")
         
         processor!.onlyApply("Median");
         filteredImage = processor!.produceImage();
@@ -184,7 +187,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     @IBAction func onConstrastFilter(sender: UIButton) {
-        print("onConstrastFilter")
+//        print("onConstrastFilter")
         
         processor!.onlyApply("Constrast");
         filteredImage = processor!.produceImage();
@@ -196,7 +199,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     @IBAction func onBrightenFilter(sender: UIButton) {
-        print("onBrightenFilter")
+//        print("onBrightenFilter")
         
         processor!.onlyApply("Brighten");
         filteredImage = processor!.produceImage();
@@ -208,7 +211,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
 
     @IBAction func onSharpenFilter(sender: UIButton) {
-        print("onSharpenFilter")
+//        print("onSharpenFilter")
         
         processor!.onlyApply("Sharpen");
         filteredImage = processor!.produceImage();
@@ -220,7 +223,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     @IBAction func onBlurFilter(sender: UIButton) {
-        print("onBlurFilter")
+//        print("onBlurFilter")
         
         processor!.onlyApply("Blur");
         filteredImage = processor!.produceImage();
@@ -237,6 +240,9 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             hideSecondaryMenu()
             sender.selected = false
         } else {
+            compareButton.selected = false;
+            editButton.selected = false;
+            
             hideSliderWidget()
             showSecondaryMenu()
             sender.selected = true

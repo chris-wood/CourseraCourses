@@ -134,9 +134,9 @@ class ImageProcessor {
         averageGreen = Int(green / pixelCount);
         averageBlue = Int(blue / pixelCount);
         
-        print(averageRed)
-        print(averageGreen)
-        print(averageBlue)
+//        print(averageRed)
+//        print(averageGreen)
+//        print(averageBlue)
     }
     
     func apply(names: String...) {
